@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 import pandas as pd
 from lxml import etree
-from scripts.config import COLUMN_ALIASES, TARGET_HEADERS_RU, REQUIRED_FIELDS, norm, clean_text, clean_serial, clean_mac
+from scripts.config import COLUMN_ALIASES, TARGET_HEADERS_RU, INV_FILTER_REGEX, norm, clean_text, clean_serial, clean_mac
 
 IN_DIR = Path("input")
 OUT_DIR = Path("output")
@@ -45,7 +45,8 @@ def to_target_df_from_matrix(df: pd.DataFrame) -> pd.DataFrame:
     hdr_norm = headers_to_columns(hdr_norm, width)
     mapping = map_columns(hdr_norm)
     data = df.iloc[hdr_idx+1:].reset_index(drop=True)
-    def col(ix): return data.iloc[:, ix] if ix is not None and ix in range(width) else pd.Series([""]*len(data))
+    def col(ix): 
+        return data.iloc[:, ix] if ix is not None and ix in range(width) else pd.Series([""]*len(data))
     out = pd.DataFrame()
     out["инвентарник"] = col(mapping.get("inv")).map(clean_text)
     out["имя"] = col(mapping.get("name")).map(clean_text)
@@ -68,15 +69,13 @@ def read_any(path: Path) -> pd.DataFrame:
             for ch in el:
                 if ch.text and ch.text.strip(): row[norm(ch.tag)] = ch.text.strip()
             if row: norm_rows.append(row)
-        return pd.DataFrame(norm_rows)
+        df = pd.DataFrame(norm_rows)
+        # добавим строку с "шапкой" для общего механизма
+        if not df.empty:
+            hdr = [norm(c) for c in df.columns]
+            df = pd.concat([pd.DataFrame([hdr]), df], ignore_index=True)
+        return df
     raise ValueError(f"Unsupported file type: {suf}")
-
-def validate_and_split(df_target: pd.DataFrame):
-    valid_mask = df_target["инвентарник"].astype(str).str.len() > 0
-    valid_mask &= df_target["имя"].astype(str).str.len() > 0
-    valid = df_target[valid_mask].copy()
-    invalid = df_target[~valid_mask].copy()
-    return valid, invalid
 
 def main():
     OUT_DIR.mkdir(exist_ok=True, parents=True)
@@ -88,11 +87,14 @@ def main():
     print("Processing:", src.name)
     df_raw = read_any(src)
     target = to_target_df_from_matrix(df_raw)
-    valid, invalid = validate_and_split(target)
-    valid = valid.drop_duplicates(subset=["инвентарник"], keep="first")
-    valid.to_csv(OUT_DIR/"supabase_items.csv", index=False, encoding="utf-8")
-    if not invalid.empty:
-        invalid.to_csv(OUT_DIR/"invalid_rows.csv", index=False, encoding="utf-8")
+    # Фильтр по инвентарнику 990000******
+    mask = target["инвентарник"].astype(str).str.match(INV_FILTER_REGEX, na=False)
+    target = target[mask].copy()
+    # Дедуп по инвентарнику (первая запись остаётся)
+    target = target.drop_duplicates(subset=["инвентарник"], keep="first")
+    # Гарантируем порядок и наличие столбцов
+    target = target[["инвентарник","имя","локация","серийник","мак"]]
+    target.to_csv(OUT_DIR/"supabase_items.csv", index=False, encoding="utf-8")
     print("Done. Output → output/supabase_items.csv")
 
 if __name__ == "__main__":
