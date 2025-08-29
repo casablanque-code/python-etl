@@ -22,7 +22,7 @@ jobs:
 
       - name: Run ETL
         run: |
-          python scripts/etl.py
+          python -m scripts/etl.py
 
       - name: Pack outputs
         run: |
