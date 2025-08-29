@@ -127,9 +127,20 @@ def main():
     # Порядок/состав колонок
     filtered = filtered[["инвентарник","имя","локация","серийник","мак"]]
 
+    # Диагностика после фильтра
     filtered.head(50).to_csv(OUT_DIR/"preview_after_filter.csv", index=False, encoding="utf-8")
+
+    # Сохранение результата
+    # 1) для Supabase (обычный UTF-8, без BOM)
     filtered.to_csv(OUT_DIR/"supabase_items.csv", index=False, encoding="utf-8")
-    print("Done. Output → output/supabase_items.csv")
+
+    # 2) для Excel на Windows (UTF-8 с BOM)
+    filtered.to_csv(OUT_DIR/"supabase_items_excel.csv", index=False, encoding="utf-8-sig")
+
+    print("Done. Output →",
+          "output/supabase_items.csv (UTF-8),",
+          "output/supabase_items_excel.csv (UTF-8 BOM for Excel)")
+
 
 if __name__ == "__main__":
     main()
