@@ -1,9 +1,11 @@
 import re
-# Алиасы заголовков (нормализованные в нижний регистр, пробелы схлопнуты)
+
+# Алиасы заголовков (нормализуем: нижний регистр, схлопнутые пробелы)
 COLUMN_ALIASES = {
     "inv": {
         "инвентарник","инв.номер","инв номер","инвентарный номер","инвкод","инв.код","инв. код","инв-номер","инв№",
-        "inventory","inventory id","inventory code","equipment id","equipment_id","inv","asset id","asset","code","код"
+        "inventory","inventory id","inventory code","inventory number",  # ← ВАЖНО: добавлено
+        "equipment id","equipment_id","inv","asset id","asset","code","код"
     },
     "name": {
         "имя","наименование","оборудование","устройство","device","item","name","model","модель","title","описание","description"
@@ -20,18 +22,28 @@ COLUMN_ALIASES = {
 }
 
 TARGET_HEADERS_RU = ["инвентарник","имя","локация","серийник","мак"]
-INV_FILTER_REGEX = re.compile(r"^\s*990000\d+\s*$")
+
+# Вместо жесткого regex используем нормализацию + startswith
+INV_START = "990000"
 
 def norm(s: str) -> str:
     return re.sub(r"\s+", " ", str(s).strip().lower())
-def clean_text(s): 
+
+def clean_text(s):
     return "" if s is None else str(s).strip()
-def clean_serial(s): 
+
+def clean_serial(s):
     return "" if s is None else str(s).strip().upper()
+
 def clean_mac(s):
-    if s is None: return ""
+    if s is None:
+        return ""
     x = str(s).strip().lower().replace(".", "").replace("-", "").replace(" ", "")
     x = re.sub(r"[^0-9a-f]", "", x)
     if len(x) == 12:
         return ":".join(x[i:i+2] for i in range(0,12,2)).upper()
     return str(s).strip().upper()
+
+def normalize_inv_for_filter(s):
+    # Удаляем всё, кроме цифр (покрывает '990000-123456', '990000 123456', '990000123456.0')
+    return re.sub(r"\D", "", str(s or ""))
