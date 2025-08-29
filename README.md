@@ -1,17 +1,17 @@
 # WeStocked Inventory ETL — XLSX/CSV/XML ➜ Supabase CSV
 
-**Задача:** из «бардака» (Excel/CSV/XML) сделать чистый CSV для вашей БД Supabase  
-Целевая схема **ровно такая**, как в приложении WeStocked:
+**task:** from «messed up» (Excel/CSV/XML) to do correct format CSV for Supabase db
+App WeStocked:
 
 ```text
-инвентарник, имя, локация, серийник, мак
+inventory_number, name, location, serial_number, mac_address
 ```
 
-Репозиторий работает **без установки софта на ваш ПК**: всё собирается в **GitHub Actions**.
+Repo works **without installation any soft**: all builds in **GitHub Actions**.
 
 ---
 
-## 🔧 Как пользоваться (для пользователя репозитория)
+## 🔧 how to use:
 
 1. Зайдите в репозиторий и положите ваш файл в папку `input/` (поддерживаются `.xlsx`, `.csv`, `.xml`).  
    Примеры имён: `eq.xlsx`, `inventory.csv`, `dump.xml`.
