@@ -3,7 +3,9 @@ name: Build ETL v3
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:
+    paths:
+      - 'input/**'     # 🔥 триггер только если что-то изменилось в input/
+  workflow_dispatch:   # 🔥 плюс возможность запустить вручную из Actions
 
 jobs:
   etl:
