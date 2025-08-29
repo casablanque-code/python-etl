@@ -2,14 +2,7 @@ name: Build ETL v3
 
 on:
   push:
-    branches:
-      - main
-    paths:
-      - 'input/**'
-      - 'scripts/**'
-      - '.github/workflows/etl.yml'
-      - 'requirements.txt'
-      - 'README.md'
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
